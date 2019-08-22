@@ -51,6 +51,12 @@ class City:
       building.city = self
       self.buildings.append( building )
 
+   def collect_tax( self ):
+      tax_total = 0
+      for building in self.buildings:
+         tax_total += building.tax_income
+      return tax_total
+
 class Building:
 
    def __init__( self, city, zone, tax_income, pos=(0, 0) ):
@@ -134,7 +140,7 @@ def main():
       tax_timer += 1
       if tax_timer > tax_timer_max:
          # Collect taxes and build a new building if we have enough.
-         city.treasury += tax_total
+         city.treasury += city.collect_tax()
          tax_timer = 0
          logger.info( 'tax collected; now: {}'.format( city.treasury ) )
 

@@ -2,6 +2,7 @@
 
 import pygame
 import random
+import logging
 
 SCREEN_WIDTH = 640
 SCREEN_HEIGHT = 480
@@ -56,6 +57,8 @@ class Building:
 
       assert( None == city.world_map.tiles[pos[Y]][pos[X]] )
 
+      self.logger = logging.getLogger( 'building' )
+
       city.world_map.tiles[pos[Y]][pos[X]] = self
       
       self.city = city
@@ -63,11 +66,12 @@ class Building:
       self.tax_income = tax_income
       self.pos = pos
 
-      icon_s1 = pygame.image.load( 'isocity/{}'.format( \
-         BUILDING_GFX[zone][random.randint( \
-         0, len( BUILDING_GFX[zone] ) - 1 )] ) ).convert_alpha()
+      icon_path = 'isocity/{}'.format( random.choice( BUILDING_GFX[zone] ) )
+      self.logger.debug( 'creating building from: {}'.format( icon_path ) )
+      icon_s1 = pygame.image.load( icon_path ).convert_alpha()
       icon_height = \
          BUILDING_W_PX * icon_s1.get_height() / icon_s1.get_width()
+      self.logger.debug( 'building image height: {}'.format( icon_height ) )
 
       icon_s2 = pygame.transform.scale( icon_s1, \
          (BUILDING_W_PX, icon_height) )
@@ -79,6 +83,9 @@ class Building:
       self.icon.set_colorkey( (255, 0, 255) )
 
 def main():
+
+   logging.basicConfig( level=logging.DEBUG )
+   logger = logging.getLogger( 'main' )
 
    tax_timer_max = 100
    world_map_sz = 5
@@ -92,21 +99,15 @@ def main():
    tax_timer = 0
    tax_total = 0
 
+   logger.debug( 'creating city...' )
    world_map = WorldMap( world_map_sz )
    city = City( world_map )
-   city.add_building( Building( city, BUILDING_RESIDENTIAL_LOW, 100, \
-      pos=(world_map_sz / 2, world_map_sz / 2) ) )
-   city.add_building( Building( city, BUILDING_RESIDENTIAL_LOW, 100, \
-      pos=(world_map_sz / 2, world_map_sz / 2 + 1) ) )
-   city.add_building( Building( city, BUILDING_RESIDENTIAL_LOW, 100, \
-      pos=(world_map_sz / 2, world_map_sz / 2 + 2) ) )
-   city.add_building( Building( city, BUILDING_RESIDENTIAL_LOW, 100, \
-      pos=(world_map_sz / 2 + 1, world_map_sz / 2) ) )
+   for i in range( 0, 3 ):
+      city.add_building( Building( city, BUILDING_RESIDENTIAL_LOW, 100, \
+         pos=(world_map_sz / 2, world_map_sz / 2 + i) ) )
 
-   #vx = SCREEN_WIDTH / 2
-   #vy = -1 * (SCREEN_HEIGHT / 2)
-   vx = 0
-   vy = 0
+   vx = SCREEN_WIDTH / 2
+   vy = SCREEN_HEIGHT / 3
    
    while running:
 
@@ -134,6 +135,8 @@ def main():
       if tax_timer > tax_timer_max:
          # Collect taxes and build a new building if we have enough.
          city.treasury += tax_total
+         tax_timer = 0
+         logger.info( 'tax collected; now: {}'.format( city.treasury ) )
 
       screen.fill( (0, 0, 0) )
 
@@ -142,9 +145,16 @@ def main():
             if tile and tile.icon:
                x = tile.pos[X]
                y = tile.pos[Y]
-               screen.blit( tile.icon, \
-                  (((x - y) * BUILDING_W_PX / 2) + vx, \
-                  ((x + y) * BUILDING_H_PX / 2) + vy) )
+
+               # These offsets make some assumptions about tile dimensions and
+               # layout.
+               screen_x = int( (((x - y) * BUILDING_W_PX / 2) + vx ) )
+               screen_y = int( ((x + y) * BUILDING_H_PX / 5) + vy )
+
+               screen.blit( tile.icon, (screen_x, screen_y) )
+               pygame.draw.rect( screen, (255, 0, 0),
+                  [screen_x, screen_y, BUILDING_W_PX, BUILDING_H_PX], 1 )
+                  
 
       pygame.display.flip()
 

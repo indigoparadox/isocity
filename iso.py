@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from isogeography import WorldMap, WorldArea
+from isoresource import Resource, Converter
 import pygame
 import random
 import logging
@@ -25,27 +27,14 @@ BUILDING_GFX = [
    ['building 7.png', 'building 6.png', 'building 5.png', 'building 4.png']
 ]
 
-class WorldMap:
-
-   def __init__( self, size ):
-
-      self.size = size
-
-      self.tiles = []
-      for x in range( 0, self.size ):
-         row = []
-         for y in range( 0, self.size ):
-            row.append( None )
-         self.tiles.append( row )
-
-class City:
+class City( WorldArea ):
 
    buildings = []
    build_range = 0
 
-   def __init__( self, world_map, treasury=0 ):
+   def __init__( self, world_map, limits, treasury=0 ):
+      super( City, self ).__init__( world_map, limits )
       self.treasury = treasury
-      self.world_map = world_map
 
    def add_building( self, building ):
       building.city = self
@@ -57,7 +46,7 @@ class City:
          tax_total += building.tax_income
       return tax_total
 
-class Building:
+class Building( Converter ):
 
    def __init__( self, city, zone, tax_income, pos=(0, 0) ):
 
@@ -94,7 +83,7 @@ def main():
    logger = logging.getLogger( 'main' )
 
    tax_timer_max = 100
-   world_map_sz = 5
+   world_map_sz = 25
    
    pygame.init()
    screen = pygame.display.set_mode( (SCREEN_WIDTH, SCREEN_HEIGHT) )
@@ -107,13 +96,15 @@ def main():
 
    logger.debug( 'creating city...' )
    world_map = WorldMap( world_map_sz )
-   city = City( world_map )
+   city = City( world_map, [1, 1, 3, 3] )
    for i in range( 0, 3 ):
       city.add_building( Building( city, BUILDING_RESIDENTIAL_LOW, 100, \
          pos=(world_map_sz / 2, world_map_sz / 2 + i) ) )
 
    vx = SCREEN_WIDTH / 2
-   vy = SCREEN_HEIGHT / 3
+   vy = SCREEN_HEIGHT / 7
+
+   dbg_font = pygame.font.SysFont( "Arial", 14 )
    
    while running:
 
@@ -146,20 +137,27 @@ def main():
 
       screen.fill( (0, 0, 0) )
 
+      y = 0
       for row in world_map.tiles:
+         x = 0
          for tile in row:
-            if tile and tile.icon:
-               x = tile.pos[X]
-               y = tile.pos[Y]
+            #x = tile.pos[X]
+            #y = tile.pos[Y]
+            screen_x = int( (((x - y) * BUILDING_W_PX / 2) + vx ) )
+            screen_y = int( ((x + y) * BUILDING_H_PX / 5) + vy )
+            tile_num = dbg_font.render( str( x ) + ", " + str( y ), True, (0, 128, 0) )
+            screen.blit( tile_num, (screen_x, screen_y) )
 
+            if tile and tile.icon:
                # These offsets make some assumptions about tile dimensions and
                # layout.
-               screen_x = int( (((x - y) * BUILDING_W_PX / 2) + vx ) )
-               screen_y = int( ((x + y) * BUILDING_H_PX / 5) + vy )
 
                screen.blit( tile.icon, (screen_x, screen_y) )
                pygame.draw.rect( screen, (255, 0, 0),
                   [screen_x, screen_y, BUILDING_W_PX, BUILDING_H_PX], 1 )
+
+            x += 1
+         y += 1
                   
 
       pygame.display.flip()

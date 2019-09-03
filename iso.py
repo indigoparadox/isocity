@@ -2,6 +2,7 @@
 
 from isogeography import WorldMap, WorldArea
 from isoresource import Resource, Converter
+from isocity import City
 import pygame
 import random
 import logging
@@ -27,28 +28,10 @@ BUILDING_GFX = [
    ['building 7.png', 'building 6.png', 'building 5.png', 'building 4.png']
 ]
 
-class City( WorldArea ):
-
-   buildings = []
-   build_range = 0
-
-   def __init__( self, world_map, limits, treasury=0 ):
-      super( City, self ).__init__( world_map, limits )
-      self.treasury = treasury
-
-   def add_building( self, building ):
-      building.city = self
-      self.buildings.append( building )
-
-   def collect_tax( self ):
-      tax_total = 0
-      for building in self.buildings:
-         tax_total += building.tax_income
-      return tax_total
-
 class Building( Converter ):
 
    def __init__( self, city, zone, tax_income, pos=(0, 0) ):
+      super( Building, self ).__init__( self )
 
       assert( None == city.world_map.tiles[pos[Y]][pos[X]] )
 
@@ -82,7 +65,6 @@ def main():
    logging.basicConfig( level=logging.DEBUG )
    logger = logging.getLogger( 'main' )
 
-   tax_timer_max = 100
    world_map_sz = 25
    
    pygame.init()
@@ -91,7 +73,6 @@ def main():
    clock = pygame.time.Clock()
 
    # Create an empty new world map.
-   tax_timer = 0
    tax_total = 0
 
    logger.debug( 'creating city...' )
@@ -127,13 +108,6 @@ def main():
                pass
          elif pygame.KEYUP == event.type:
             pass
-
-      tax_timer += 1
-      if tax_timer > tax_timer_max:
-         # Collect taxes and build a new building if we have enough.
-         city.treasury += city.collect_tax()
-         tax_timer = 0
-         logger.info( 'tax collected; now: {}'.format( city.treasury ) )
 
       screen.fill( (0, 0, 0) )
 

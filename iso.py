@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from isogeography import WorldMap, WorldArea
-from isoresource import Resource, Converter
+from isoresource import Resource, Converter, Creator
 from isocity import City
 import pygame
 import random
@@ -28,10 +28,10 @@ BUILDING_GFX = [
    ['building 7.png', 'building 6.png', 'building 5.png', 'building 4.png']
 ]
 
-class Building( Converter ):
+class Building( Creator ):
 
    def __init__( self, city, zone, tax_income, pos=(0, 0) ):
-      super( Building, self ).__init__( self )
+      super( Building, self ).__init__()
 
       assert( None == city.world_map.tiles[pos[Y]][pos[X]] )
 
@@ -59,6 +59,9 @@ class Building( Converter ):
       self.icon.blit( \
          icon_s2, (0, self.icon.get_height() - icon_s2.get_height()) )
       self.icon.set_colorkey( (255, 0, 255) )
+
+   def get_tax( self ):
+      pass
 
 def main():
 
@@ -108,6 +111,8 @@ def main():
                pass
          elif pygame.KEYUP == event.type:
             pass
+
+      city.simulate()
 
       screen.fill( (0, 0, 0) )
 

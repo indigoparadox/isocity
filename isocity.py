@@ -21,3 +21,7 @@ class City( WorldArea, Receiver ):
          tax_total += building.tax_income
       return tax_total
 
+   def simulate( self ):
+      for bldg in self.buildings:
+         bldg.simulate()
+

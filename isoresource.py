@@ -1,7 +1,39 @@
 
 import logging
 
-class Converter( object ):
+class Creator( object ):
+
+   def __init__( self ):
+      self.resources = {}
+      self.logger = logging.getLogger( 'creator' )
+
+   def pop_res( self, res_name, count ):
+      if res_name in self.resources:
+         if count <= self.resources[res_name]:
+            self.resources[res_name] -= count
+            assert 0 <= self.resources[res_name]
+            return count
+         else:
+            diff = count - self.resources[res_name]
+            self.resources[res_name] = 0
+            return diff
+      else:
+         return 0
+
+class Receiver( object ):
+
+   def __init__( self ):
+      self.resources = {}
+      self.logger = logging.getLogger( 'receiver' )
+
+   def push_res( self, res_name, count ):
+      if not res_name in self.resources:
+         self.resources.update( {res_name: count} )
+      else:
+         self.resources[res_name] += count
+
+
+class Converter( Creator, Receiver ):
 
    class _Conversion( object ):
       def __init__( self, rcvr, res_in, res_out, ticks_mod, consume=False ):
@@ -16,33 +48,14 @@ class Converter( object ):
          self.receiver = rcvr
 
    def __init__( self ):
+      super( Converter, self ).__init__()
       self.ticks = 0
       self.conversions = []
-      self.resources = {}
       self.logger = logging.getLogger( 'converter' )
 
    def add_conversion( self, res_in, res_out, ticks_mod, consume=True ):
       cvt = Converter._Conversion( res_in, res_out, ticks_mod, consume )
       self.conversions.append( cvt )
-
-   def push_res( self, res_name, count ):
-      if not res_name in self.resources:
-         self.resources.update( {res_name: count} )
-      else:
-         self.resources[res_name] += count
-
-   def pop_res( self, res_name, count ):
-      if res_name in self.resources:
-         if count <= self.resources[res_name]:
-            self.resources[res_name] -= count
-            assert 0 <= self.resources[res_name]
-            return count
-         else:
-            diff = count - self.resources[res_name]
-            self.resources[res_name] = 0
-            return diff
-      else:
-         return 0
 
    def simulate( self ):
       self.ticks += 1
